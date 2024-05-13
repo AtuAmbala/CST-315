@@ -1,3 +1,0 @@
-This is a test file for project 1.
-This project is by Rix and Atu.
-Let's try and switch this around.
