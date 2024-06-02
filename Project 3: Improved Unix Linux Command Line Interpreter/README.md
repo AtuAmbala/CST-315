@@ -18,16 +18,16 @@ Run LopeShell without any arguments to enter interactive mode:
 ./lopeShell 
 
 In interactive mode, the shell displays a prompt and waits for the user to enter commands: 
-$lopeShell > ls
-$lopeShell > /bin/ls
-$lopeShell > ls -l
-$lopeShell > ls -l; touch file
+$lopeShell > ls  
+$lopeShell > /bin/ls  
+$lopeShell > ls -l  
+$lopeShell > ls -l; touch file  
 
 Features:
-Custom prompt for command input.
-Execute single and multiple commands.
-Concurrent execution of multiple commands.
-Signal handling for graceful exit (CTRL+C) and immediate termination (CTRL+).
-Batch mode for executing commands from a file.
-Directory Navigation
-Command History
+Custom prompt for command input.  
+Execute single and multiple commands.  
+Concurrent execution of multiple commands.  
+Signal handling for graceful exit (CTRL+C) and immediate termination (CTRL+).  
+Batch mode for executing commands from a file.  
+Directory Navigation  
+Command History  
