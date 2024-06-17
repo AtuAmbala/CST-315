@@ -1,0 +1,14 @@
+create process process1 10
+create process process2 20
+create process process3 30
+procs
+info process process1
+priority process process1 5
+procs -a
+procs -a -si
+info process process2 --detailed
+priority process process2 10
+procs
+info process process3
+delete process process3
+procs
