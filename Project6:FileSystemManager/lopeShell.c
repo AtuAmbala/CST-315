@@ -22,6 +22,8 @@
 #include <dirent.h>
 
 // Function prototypes
+void execute_command(char *command);
+void execute_batch_commands(const char *filename);
 void create_file(const char *path, size_t size) ;
 void modify_file(const char *path, const char *content);
 void move_file(const char *source, const char *destination);
@@ -41,6 +43,11 @@ void rename_directory(const char *old_path, const char *new_path);
 void duplicate_directory(const char *source_path, const char *dest_path);
 void get_basic_info_dir(const char *path);
 void get_detailed_info_dir(const char *path);
+void batch_mode(const char *filename);
+void list_processes(int detailed, int sort_by_id);
+void display_process_info(int id, int detailed);
+void modify_process_priority(int id, int new_priority);
+
 
 // Define constants for maximum input size and argument count
 #define MAX_INPUT_SIZE 1024
@@ -234,7 +241,7 @@ void execute_command(char *command) {
     }
 
     // Check for built-in commands
-    if (strcmp(args[0], "create") == 0 && strcmp(args[1], "process") == 0) {
+    else if (strcmp(args[0], "create") == 0 && strcmp(args[1], "process") == 0) {
         if (args[2] == NULL || args[3] == NULL) {
             fprintf(stderr, "create process: expected name and burst time\n");
         } else {
@@ -252,11 +259,16 @@ void execute_command(char *command) {
         }
         return;
     } else if (strcmp(args[0], "procs") == 0) {
-        for (int i = 0; i < scheduler.process_count; i++) {
-            Process *p = scheduler.processes[i];
-            printf("ID: %d, Name: %s, State: %d, Priority: %d, Burst Time: %d, Time Left: %d\n",
-                   p->id, p->name, p->state, p->priority, p->burst_time, p->time_left);
+        int detailed = 0;
+        int sort_by_id = 0;
+        for (int j = 1; args[j] != NULL; j++) {
+            if (strcmp(args[j], "-a") == 0) {
+                detailed = 1;
+            } else if (strcmp(args[j], "-si") == 0) {
+                sort_by_id = 1;
+            }
         }
+        list_processes(detailed, sort_by_id);
         return;
     } else if (strcmp(args[0], "schedule") == 0) {
         round_robin_schedule();
@@ -471,6 +483,27 @@ void execute_command(char *command) {
             }
         }
         return;
+    } else if (strcmp(args[0], "info") == 0 && strcmp(args[1], "process") == 0) {
+        if (args[2] == NULL) {
+            fprintf(stderr, "info process: expected process ID\n");
+        } else {
+            int id = atoi(args[2]);
+            int detailed = 0;
+            if (args[3] != NULL && strcmp(args[3], "--detailed") == 0) {
+                detailed = 1;
+            }
+            display_process_info(id, detailed);
+        }
+        return;
+    } else if (strcmp(args[0], "priority") == 0 && strcmp(args[1], "process") == 0) {
+        if (args[2] == NULL || args[3] == NULL) {
+            fprintf(stderr, "priority process: expected process ID and new priority\n");
+        } else {
+            int id = atoi(args[2]);
+            int new_priority = atoi(args[3]);
+            modify_process_priority(id, new_priority);
+        }
+        return;
     }
 
 
@@ -509,6 +542,11 @@ void batch_mode(const char *filename) {
 
     char line[MAX_INPUT_SIZE];
     while (fgets(line, sizeof(line), file)) {
+        // Remove newline character if present
+        size_t len = strlen(line);
+        if (len > 0 && line[len - 1] == '\n') {
+            line[len - 1] = '\0';
+        }
         printf("Executing: %s", line);  // Echo the command being executed
         execute_commands(line);  // Execute the commands in the line
     }
@@ -957,6 +995,60 @@ void rename_directory(const char *old_path, const char *new_path) {
         printf("Directory renamed from %s to %s successfully.\n", old_path, new_path);
     }
 }
+
+
+void list_processes(int detailed, int sort_by_id) {
+    // Sort by ID if requested
+    if (sort_by_id) {
+        for (int i = 0; i < scheduler.process_count - 1; i++) {
+            for (int j = 0; j < scheduler.process_count - i - 1; j++) {
+                if (scheduler.processes[j]->id > scheduler.processes[j + 1]->id) {
+                    Process *temp = scheduler.processes[j];
+                    scheduler.processes[j] = scheduler.processes[j + 1];
+                    scheduler.processes[j + 1] = temp;
+                }
+            }
+        }
+    }
+
+    for (int i = 0; i < scheduler.process_count; i++) {
+        Process *p = scheduler.processes[i];
+        if (detailed) {
+            printf("ID: %d, Name: %s, State: %d, Priority: %d, Burst Time: %d, Time Left: %d\n",
+                   p->id, p->name, p->state, p->priority, p->burst_time, p->time_left);
+        } else {
+            printf("ID: %d, Name: %s, State: %d\n", p->id, p->name, p->state);
+        }
+    }
+}
+
+
+void display_process_info(int id, int detailed) {
+    Process *p = find_process(id);
+    if (p == NULL) {
+        printf("Process with ID %d not found.\n", id);
+        return;
+    }
+
+    if (detailed) {
+        printf("ID: %d, Name: %s, State: %d, Priority: %d, Burst Time: %d, Time Left: %d\n",
+               p->id, p->name, p->state, p->priority, p->burst_time, p->time_left);
+    } else {
+        printf("ID: %d, Name: %s, State: %d\n", p->id, p->name, p->state);
+    }
+}
+
+void modify_process_priority(int id, int priority) {
+    Process *p = find_process(id);
+    if (p == NULL) {
+        printf("Process with ID %d not found.\n", id);
+        return;
+    }
+
+    p->priority = priority;
+    printf("Priority of process %d set to %d.\n", id, priority);
+}
+
 
 
 // Main function
